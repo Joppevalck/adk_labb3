@@ -50,7 +50,6 @@ class Flowprob {
 
     public boolean bfs(){
         boolean[] visited = new boolean[this.numNodes];
-        Arrays.fill(visited, false);
 
         LinkedList<Integer> q = new LinkedList<Integer>();
         q.add(s);
@@ -58,7 +57,7 @@ class Flowprob {
 
         path[s] = -1;   // markera början med -1
 
-        while (q.size() != 0){
+        while (!q.isEmpty()){
             int currentNode = q.poll();
 
             for (Tuple edge : this.graph.get(currentNode)) {
