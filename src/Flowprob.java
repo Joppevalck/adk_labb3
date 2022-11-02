@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -9,15 +8,16 @@ class Flowprob {
     int t;
     int numEdges;
     int[] path;
-    ArrayList<LinkedList<Tuple>> graph;
+    Edge[][] graph;
     int maxFlow = 0;
 
-    class Tuple{
+    class Edge{
         int to;
         int cap;
         boolean reverse;
+        Edge reversedEdge;
 
-        Tuple(int to, int cap, boolean reverse ){
+        Edge(int to, int cap, boolean reverse ){
             this.to = to;
             this.cap = cap;
             this.reverse = reverse;
@@ -31,19 +31,28 @@ class Flowprob {
         this.t = io.getInt() - 1;
         this.numEdges = io.getInt();
 
-        this.graph = new ArrayList<LinkedList<Tuple>>(numNodes);
-        for(int i = 0; i < numNodes; i++){
-            graph.add(i, new LinkedList<Tuple>());
-        }
+        this.graph = new Edge[numNodes][numNodes];
+        int[] countEdges = new int[numNodes];
+        Arrays.fill(countEdges, 0);
+
+        Edge normEdge;
+        Edge revEdge;
 
         for(int i  = 0; i < numEdges; i++){
             int from = io.getInt() - 1;
             int to = io.getInt() - 1;
             int cap = io.getInt();
 
+            normEdge = new Edge(to, cap, false);
+            revEdge = new Edge(from, 0, true);
+
             // Sätt både cap och restflöde
-            this.graph.get(from).add(new Tuple(to, cap, false));
-            this.graph.get(to).add(new Tuple(from, 0, true));
+            this.graph[from][countEdges[from]++] = normEdge;
+            this.graph[to][countEdges[to]++] = revEdge;
+
+            normEdge.reversedEdge = revEdge;
+            revEdge.reversedEdge = normEdge;
+
         }
         this.path = new int[numNodes];
     }
@@ -60,7 +69,10 @@ class Flowprob {
         while (!q.isEmpty()){
             int currentNode = q.poll();
 
-            for (Tuple edge : this.graph.get(currentNode)) {
+            for (Edge edge : this.graph[currentNode]) {
+                if(edge == null){
+                    break;
+                }
                 if(!visited[edge.to] && edge.cap > 0) {
                     if (edge.to == this.t) {
                         path[edge.to] = currentNode;
@@ -78,14 +90,20 @@ class Flowprob {
 
     void fordFulkerson(){
 
+
+        // For each path
         while (bfs()){
+            // Get path flow
             int pathFlow = Integer.MAX_VALUE;
             for(int node = t; node != s; node = path[node]){
                 int parent = path[node];
 
                 // Get cap from edge node to parent
                 int cap = -1;
-                for (Tuple edge : graph.get(parent)) {
+                for (Edge edge : graph[parent]) {
+                    if(edge == null){
+                        break;
+                    }
                     if(edge.to == node){
                         cap = edge.cap;
                     }
@@ -96,14 +114,13 @@ class Flowprob {
 
             for(int node = t; node != s; node = path[node]){
                 int parent = path[node];
-                for (Tuple edge : graph.get(parent)) {
+                for (Edge edge : graph[parent]) {
+                    if(edge == null){
+                        break;
+                    }
                     if(edge.to == node){
                         edge.cap -= pathFlow;
-                    }
-                }
-                for (Tuple edge : graph.get(node)) {
-                    if(edge.to == parent){
-                        edge.cap += pathFlow;
+                        edge.reversedEdge.cap += pathFlow;
                     }
                 }
             }
@@ -119,8 +136,11 @@ class Flowprob {
 
         int count = 0;
         StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < graph.size(); i++){
-            for (Tuple edge : graph.get(i)) {
+        for(int i = 0; i < graph.length; i++){
+            for (Edge edge : graph[i]) {
+                if(edge == null){
+                    break;
+                }
                 if(edge.reverse && edge.cap != 0){
                     sb.append((edge.to + 1) + " " + (i + 1) + " " + edge.cap + "\n");
                     count++;
@@ -129,25 +149,28 @@ class Flowprob {
         }
         io.println(count);
         io.println(sb.toString());
-
     }
 
-    Flowprob() {
+    Flowprob() throws Exception {
         io = new Kattio(System.in, System.out);
 
         readProb();
 
         fordFulkerson();
 
+//        throw new Exception("done print ");
+
         printGraph();
+
+//        throw new Exception("done");
 
         // Kom ihåg att stänga ner Kattio-klassen
         io.close();
+
+
     }
 
-
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new Flowprob();
     }
 
